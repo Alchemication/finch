@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+
+# Financial data belongs under FINCH_HOME, never in the checkout. Ignore the
+# shapes it arrives in, so a statement dropped here by mistake cannot be
+# committed. Synthetic fixtures under tests/fixtures/ are the only exception.
+*.db
+*.db-wal
+*.db-shm
+*.csv
+*.pdf
+*.xlsx
+*.ofx
+*.qif
+profiles.toml
+!tests/fixtures/**
