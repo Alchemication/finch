@@ -10,7 +10,7 @@ something matters, and treats privacy as a first principle.
 **Status: ledger, AIB import and recurring payments.** Profiles, the ledger
 database, a reconciling import of AIB current account exports, and detection of
 recurring payments with their price changes work. Categories, transfer matching
-and reports are not built yet. See the [roadmap](docs/roadmap.md).
+and reports are not built yet. See the [project plan](docs/PROJECT_PLAN.md).
 
 ## How it works
 
@@ -84,7 +84,9 @@ Every command except `profile` takes `--profile NAME`. Run any command with
 - [AIB exports](docs/aib.md) — getting the file, and what the parser accepts
 - [Recurring payments](docs/recurring.md) — what counts, price changes, known limits
 - [Data model](docs/data-model.md) — tables, conventions, row identity, reconciliation
-- [Roadmap](docs/roadmap.md) — what is not built yet
+- [Project plan](docs/PROJECT_PLAN.md) — what comes next, and open questions
+- [Decisions](docs/DECISIONS.md) — what has been decided and why
+- [Principles](docs/PRINCIPLES.md) — how finch should feel, and what it must never do
 
 ## Development
 

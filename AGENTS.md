@@ -45,8 +45,10 @@ correction, not the derivation.
 **Deterministic before LLM.** Every figure, match, total and detection is code
 with tests. A model may propose an interpretation of an ambiguous row, explain
 a change, or research an alternative. What it proposes is stored with source and
-confidence, and becomes a rule only once the owner confirms it. Neither SQL a
-model writes nor a model's prose computes money a function already computes.
+confidence, and becomes a rule only once the owner confirms it. A model may
+query the ledger with SQL for questions no function answers, over a connection
+that is read-only by construction, not by prompt. A figure a function computes
+comes from that function, never from a model's SQL or prose.
 
 **No personal data in the repository.** Statements, account numbers, amounts,
 real merchant names and keys live under `FINCH_HOME`, never in tracked files;
@@ -81,9 +83,10 @@ reference implementations, not dependencies.
 There is no LLM layer yet. When the first model call lands, start from
 zdrowskit's `llm.py`, `model_prefs.py`, its `llm_call` / `llm_trace` /
 `llm_feedback` tables and its eval framework, which are the battle-tested
-versions. zdrowskit's cases copy the fixture of a real call; here a case
-keeps a real call's shape but never its figures, names or dates. Take CashAsh's proposal pattern (`proposals.py`, `pending_write`) for
-any write a model suggests. Do not extract a shared package until finch has run
+versions, and from its Telegram chat and SQL tool. zdrowskit's cases copy
+the fixture of a real call; here a case keeps a real call's shape but never
+its figures, names or dates. Take CashAsh's proposal pattern (`proposals.py`,
+`pending_write`) for any write a model suggests. Do not extract a shared package until finch has run
 on real data for a month and all three copies' actual needs are known.
 
 ## Collaboration Style
@@ -104,12 +107,27 @@ what you find — don't wait to be asked.
 
 ## Documentation
 
+Read `docs/PROJECT_PLAN.md` at the start of a session, and `docs/DECISIONS.md`
+before reopening anything settled.
+
+| File | What it holds |
+|---|---|
+| `docs/PROJECT_PLAN.md` | The next steps, in the agreed order, and open questions. Take a step out when it is done. |
+| `docs/DECISIONS.md` | What has been decided and why. |
+| `docs/PRINCIPLES.md` | How finch should feel to the household and what it must never do. Check a new report, message or command against it. |
+| `docs/aib.md`, `docs/recurring.md`, `docs/data-model.md` | Current behavior: the AIB format, recurring payments, tables and reconciliation. |
+| `README.md` | Setup, commands, where data lives. |
+| `CLAUDE.md` / `AGENTS.md` | Working rules (this file). |
+
+Adding, renaming or removing a doc updates this table and README's list.
+
 Any change to user-visible behavior, commands, defaults, limits, paths, storage
 or workflows must audit and update `README.md`, `docs/*.md` and `.env_example`
 in the same commit, even when the code change is small.
 
 Docs describe current behavior, not history or plans — except
-`docs/roadmap.md`, which is explicitly about what is not built yet.
+`docs/PROJECT_PLAN.md` and `docs/DECISIONS.md`, which are about what comes
+next and why.
 
 Docs name the knob and the command that prints its value; code owns the value.
 
