@@ -8,6 +8,7 @@ what was imported.
 Public API:
     private_path    -- resolve a path, refusing anywhere inside the repository
     archive_source  -- store file bytes under their SHA-256, once
+    archived_file   -- the archived file for a hash, if it is there
 
 Example:
     from sources import archive_source
@@ -90,3 +91,15 @@ def archive_source(root: Path, content: bytes, *, suffix: str) -> tuple[str, Pat
     target = directory / f"source{clean_suffix}"
     _write_once(target, content)
     return digest, target
+
+
+def archived_file(root: Path, digest: str) -> Path | None:
+    """Return the file archived under *digest*, or None if it is not there.
+
+    The extension is not recorded anywhere but on disk, so the one file in
+    the hash's directory is the answer.
+    """
+    directory = root / digest
+    if not directory.is_dir():
+        return None
+    return next(iter(sorted(directory.glob("source*"))), None)

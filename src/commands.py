@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+from typing import TYPE_CHECKING
 
 from config import BALANCE_BREAKS_SHOWN
 from db.migrations import get_live_schema, list_migrations
+from identifiers import AccountIdentifiers, domestic_parts
 from ledger import balance_breaks, latest_balance
 from models import Account
 from money import format_minor
@@ -15,11 +17,16 @@ from store import (
     account_summary,
     add_account,
     get_account,
+    get_account_identifiers,
     load_accounts,
     open_db,
     open_existing_db,
+    set_account_identifiers,
     table_counts,
 )
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 
 def cmd_profile(args: argparse.Namespace) -> None:
@@ -73,7 +80,7 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 
 def cmd_account(args: argparse.Namespace) -> None:
-    """Add an account or list accounts."""
+    """Add an account, list accounts, or enter and show an account's details."""
     from rich.console import Console
     from rich.table import Table
 
@@ -81,6 +88,9 @@ def cmd_account(args: argparse.Namespace) -> None:
     profile = resolve_profile(args.profile)
     conn = open_existing_db(profile.db)
     try:
+        if args.account_cmd == "details":
+            _account_details(console, conn, args)
+            return
         if args.account_cmd == "add":
             account = Account(
                 name=args.name,
@@ -113,6 +123,52 @@ def cmd_account(args: argparse.Namespace) -> None:
         console.print(table)
     finally:
         conn.close()
+
+
+def _account_details(
+    console: Console, conn: sqlite3.Connection, args: argparse.Namespace
+) -> None:
+    """Store an account's IBAN and BIC when given, then print its details.
+
+    Raises:
+        ValueError: If the IBAN is invalid or ends differently from the account.
+    """
+    account = get_account(conn, args.name)
+    if args.iban:
+        identifiers = AccountIdentifiers(iban=args.iban, bic=args.bic)
+        if account.identifier_hint and identifiers.last4 != account.identifier_hint:
+            raise ValueError(
+                f"That IBAN does not end in {account.identifier_hint}, the last "
+                f"four digits recorded for {account.name}. Check the account."
+            )
+        with conn:
+            set_account_identifiers(conn, account.id, identifiers)
+        console.print(f"[green]Saved details[/green] for {account.name}.")
+    elif args.bic:
+        raise ValueError("Give --iban with --bic; the BIC is stored with its IBAN.")
+
+    identifiers = get_account_identifiers(conn, account.id)
+    if identifiers is None:
+        console.print(
+            f"No details entered for {account.name}. Add them with "
+            f"[cyan]uv run python main.py account details {account.name} "
+            f"--iban IBAN --bic BIC[/cyan]."
+        )
+        return
+    lines = [
+        f"{account.name} ({account.institution})",
+        f"IBAN  {identifiers.grouped_iban}",
+    ]
+    if identifiers.bic:
+        lines.append(f"BIC   {identifiers.bic}")
+    parts = domestic_parts(identifiers.iban)
+    if parts:
+        sort_code, number = parts
+        lines.append(
+            f"Sort code       {sort_code[:2]}-{sort_code[2:4]}-{sort_code[4:]}"
+        )
+        lines.append(f"Account number  {number}")
+    print("\n".join(lines))
 
 
 def cmd_status(args: argparse.Namespace) -> None:

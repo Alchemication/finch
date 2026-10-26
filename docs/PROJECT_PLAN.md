@@ -69,6 +69,11 @@ Not ordered. Each waits until real use shows it is needed.
   fast and cheap enough to run over the whole ledger.
 - Refunds and reimbursements linked to what they reverse.
 - Tax reliefs claimable from evidence already in the statements.
+- Payslips as a source: gross pay, tax, and pension contributions from both
+  employee and employer. Pension contributions made through payroll never
+  reach a bank account, so without them a savings rate can read as zero for a
+  household that saves a fifth of gross pay. They also give the headroom under
+  the age-related limit on pension tax relief.
 - Savings, pension, mortgage and investment balances as dated snapshots, and
   net worth from them. CashAsh stays the source for the stock portfolio.
 - Who owes whom between partners, if the household ever settles up that way.

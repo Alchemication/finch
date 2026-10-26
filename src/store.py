@@ -21,6 +21,13 @@ Public API:
     load_ledger_rows   -- an account's transactions in ledger order
     account_summary    -- counts and date coverage for one account
     table_counts       -- row counts for every ledger table
+    add_document       -- insert a document, returning it with its id
+    find_document      -- a document by content hash
+    get_document       -- a document by id
+    load_documents     -- every document, newest first
+    load_imports       -- every statement import with its account
+    set_account_identifiers -- store or replace an account's IBAN and BIC
+    get_account_identifiers -- an account's IBAN and BIC, if entered
 
 Example:
     from store import open_existing_db, load_accounts
@@ -37,12 +44,13 @@ import os
 import sqlite3
 from collections.abc import Sequence
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from config import PRIVATE_DIR_MODE, PRIVATE_FILE_MODE
 from db.migrations import apply_migrations
-from models import Account, ParsedStatement, StatementRow
+from identifiers import AccountIdentifiers
+from models import Account, Document, ParsedStatement, StatementRow
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +59,8 @@ LEDGER_TABLES: tuple[str, ...] = (
     "statement_imports",
     "transactions",
     "transaction_sightings",
+    "documents",
+    "account_identifiers",
 )
 
 
@@ -393,3 +403,122 @@ def load_description_inputs(
         """,
         (account_id,),
     ).fetchall()
+
+
+# ---------------------------------------------------------------------------
+# Documents
+# ---------------------------------------------------------------------------
+
+
+def _document(row: sqlite3.Row) -> Document:
+    return Document(
+        sha256=row["sha256"],
+        original_name=row["original_name"],
+        title=row["title"],
+        dated_on=date.fromisoformat(row["dated_on"]) if row["dated_on"] else None,
+        note=row["note"],
+        id=row["id"],
+    )
+
+
+def add_document(conn: sqlite3.Connection, document: Document) -> Document:
+    """Insert a document.
+
+    Returns:
+        The document with its database id.
+
+    Raises:
+        ValueError: If a document with the same content is already stored.
+    """
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO documents (sha256, original_name, title, dated_on, note, added_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                document.sha256,
+                document.original_name,
+                document.title,
+                document.dated_on.isoformat() if document.dated_on else None,
+                document.note,
+                _now(),
+            ),
+        )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError("This file is already kept as a document.") from exc
+    return replace(document, id=cursor.lastrowid)
+
+
+def find_document(conn: sqlite3.Connection, sha256: str) -> Document | None:
+    """Return the document with this content hash, if any."""
+    row = conn.execute("SELECT * FROM documents WHERE sha256 = ?", (sha256,)).fetchone()
+    return _document(row) if row else None
+
+
+def get_document(conn: sqlite3.Connection, document_id: int) -> Document:
+    """Return one document by id.
+
+    Raises:
+        ValueError: If no document has that id.
+    """
+    row = conn.execute(
+        "SELECT * FROM documents WHERE id = ?", (document_id,)
+    ).fetchone()
+    if row is None:
+        raise ValueError(
+            f"No document #{document_id}. List them with 'uv run python main.py doc list'."
+        )
+    return _document(row)
+
+
+def load_documents(conn: sqlite3.Connection) -> list[Document]:
+    """Return every document, newest first by its own date, then by when added."""
+    rows = conn.execute(
+        "SELECT * FROM documents ORDER BY COALESCE(dated_on, added_at) DESC, id DESC"
+    ).fetchall()
+    return [_document(row) for row in rows]
+
+
+def load_imports(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Return every statement import with its account's name, newest first."""
+    return conn.execute(
+        """
+        SELECT i.id, i.source_sha256, i.first_posted_on, i.last_posted_on,
+               i.rows_seen, i.imported_at, a.name AS account, a.institution
+        FROM statement_imports i
+        JOIN accounts a ON a.id = i.account_id
+        ORDER BY i.last_posted_on DESC, i.id DESC
+        """
+    ).fetchall()
+
+
+# ---------------------------------------------------------------------------
+# Account identifiers
+# ---------------------------------------------------------------------------
+
+
+def set_account_identifiers(
+    conn: sqlite3.Connection, account_id: int, identifiers: AccountIdentifiers
+) -> None:
+    """Store an account's IBAN and BIC, replacing any entered before."""
+    conn.execute(
+        """
+        INSERT INTO account_identifiers (account_id, iban, bic, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT (account_id) DO UPDATE SET
+            iban = excluded.iban, bic = excluded.bic, updated_at = excluded.updated_at
+        """,
+        (account_id, identifiers.iban, identifiers.bic, _now()),
+    )
+
+
+def get_account_identifiers(
+    conn: sqlite3.Connection, account_id: int
+) -> AccountIdentifiers | None:
+    """Return an account's IBAN and BIC, or None if none were entered."""
+    row = conn.execute(
+        "SELECT iban, bic FROM account_identifiers WHERE account_id = ?",
+        (account_id,),
+    ).fetchone()
+    return AccountIdentifiers(iban=row["iban"], bic=row["bic"]) if row else None

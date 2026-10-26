@@ -12,6 +12,8 @@ Each profile's ledger lives at `$FINCH_HOME/profiles/<name>/ledger.db`.
 | `statement_imports` | One row per imported file: content hash, original filename, the parser and version that read it, the period and balances it claimed, rows seen and rows new. |
 | `transactions` | Each transaction exactly as a statement reported it, with every source field kept verbatim in `raw_json`. |
 | `transaction_sightings` | Every import that reported each transaction, with its row number in that file. |
+| `documents` | One row per kept document (`doc add`): content hash, original filename, title, the date it carries and a note. The file itself is in the source archive. |
+| `account_identifiers` | The owner's own IBAN and BIC for an account, typed in with `account details`. The only place a full account identifier is stored; no model reads it. |
 
 There are no tables for merchants, categories, transfers or recurring payments
 yet. Each arrives with the code that fills it.
@@ -23,6 +25,7 @@ yet. Each arrives with the code that fills it.
 - `transactions` contains no interpretation. Nothing rewrites a stored row.
 - `raw_json` keeps every source column verbatim, except sort codes and account
   numbers, which parsers cut to their last four digits wherever they appear.
+  Full identifiers exist only in `account_identifiers`, entered by hand.
 
 ## Row identity
 
@@ -72,3 +75,7 @@ Every imported file is copied to
 owner-only. The original filename is recorded on the import row but not reused
 on disk, since bank filenames often embed an account number. A file that no
 longer matches its hash stops any further import of it.
+
+Documents kept with `doc add` (contracts, letters, agreements) go into the same
+archive, so every file a profile was given is in one place. `doc list` shows
+each document and each statement with where its file is.

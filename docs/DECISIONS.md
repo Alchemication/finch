@@ -55,6 +55,14 @@ change: say so, and update it here. The working rules that follow from them
   row count; an eval set of questions with known answers catches quiet errors.
   Query results go to the model provider, which is the open question on what
   leaves the machine (`docs/PROJECT_PLAN.md`).
+- **The owner's own bank details are kept, and hidden from models** (Adam,
+  2026-10-26). finch is where the household finds things, account details
+  included, so each account can hold its IBAN and BIC, entered by hand. Bank
+  rows still keep at most four digits: they are evidence, and nothing needs
+  more. The details sit in their own table so chat can be denied it outright
+  (an SQLite authorizer refusing reads of `account_identifiers`), and asking
+  for them is answered by a command, not a model, so they never reach a
+  provider.
 - **Research by hand first** (2026-10-22). Alternatives at renewal are
   researched in Claude Code sessions, as re-kid researches its worlds, and
   written down with source, retrieval date and what was compared. A research

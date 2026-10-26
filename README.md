@@ -56,7 +56,7 @@ $FINCH_HOME/
   profiles.toml
   profiles/<name>/
     ledger.db
-    sources/<sha256>/source.<ext>
+    sources/<sha256>/source.<ext>    statements and kept documents
 ```
 
 Directories are created `0700` and files `0600`. Nothing private may be written
@@ -71,9 +71,13 @@ inside the repository.
 | `init` | Create the profile's ledger database. The only command that creates one. |
 | `account add NAME --institution BANK --kind KIND` | Register an account. `--currency` and `--last4` are optional. |
 | `account list` | List accounts. |
+| `account details NAME [--iban IBAN] [--bic BIC]` | Show an account's IBAN, BIC, sort code and account number, or store them. The IBAN is checked by its check digits and must end in the account's `--last4`. |
 | `import FILE [--account NAME] [--dry-run]` | Import a bank export. `--dry-run` reports what would change and writes nothing. Re-importing a file, or an overlapping one, adds only new rows. |
 | `recurring [--account NAME] [--window-days N] [--all]` | Subscriptions, bills, transfers and pay that repeat: monthly cost, price changes, and payments started or stopped recently. |
 | `status` | Per account: transactions, date coverage, balance, imports, and balance breaks. |
+| `doc add FILE --title TITLE [--date YYYY-MM-DD] [--note TEXT]` | Keep a contract, letter or agreement in the private archive. Adding the same file again changes nothing. |
+| `doc list` | Every kept document, and every imported statement with where its file is archived. |
+| `doc open N` | Open kept document N. |
 | `db status` / `db schema` | Migration state and row counts, or the live schema. |
 
 Every command except `profile` takes `--profile NAME`. Run any command with

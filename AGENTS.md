@@ -59,7 +59,11 @@ test — a price step, a drifting date, a truncated name — never the real valu
 An eval case derived from a real LLM call is rewritten the same way before it
 is committed, and refers to that call only by id. Never log a
 transaction description, IBAN or full account number: problems name a row by
-number and date. Store at most the last four digits of an account number.
+number and date. Transactions and their raw fields store at most the last four
+digits of an account number. The one exception is `account_identifiers`: the
+owner's own IBAN and BIC, typed in with `account details` so they can be looked
+up. It is never logged, never repeated in an error message, and never readable
+by a model.
 
 **`FINCH_HOME` stays off synced folders.** The default is under
 `~/Library/Application Support`, not `~/Documents`, which iCloud may sync:
@@ -171,17 +175,18 @@ committing.
 - `src/db/migrations/` — versioned schema, one file per change
 - `src/models.py` — dataclasses with input validation, no persistence
 - `src/money.py` — integer minor units: strict parsing and formatting
+- `src/identifiers.py` — the owner's own IBAN and BIC: checksum, sort code, account number
 - `src/store.py` — SQLite read/write, no business logic, never commits
 - `src/profiles.py` — roster, per-profile paths, private directories
-- `src/sources.py` — write-once private archive of imported files
+- `src/sources.py` — write-once private archive of statements and documents
 - `src/ledger.py` — derived facts: running-balance walks, latest balance
 - `src/ingest.py` — validates a `ParsedStatement` and writes it, or refuses
 - `src/parsers/` — one module per bank format, returning a `ParsedStatement`
   and never touching the database; `parsers.detect` picks one by content
 - `src/describe.py` — channel, counterparty and grouping key for stored rows
 - `src/recurring.py` — recurring series, price changes, report window
-- `src/commands.py`, `src/cmd_import.py`, `src/cmd_recurring.py` — CLI handlers
-  and rendering
+- `src/commands.py`, `src/cmd_import.py`, `src/cmd_recurring.py`,
+  `src/cmd_documents.py` — CLI handlers and rendering
 
 A parser records the layout it was written against in its module docstring and
 in `docs/<bank>.md`, and rejects anything affecting a figure outside it. When a

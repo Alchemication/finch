@@ -4,6 +4,7 @@ Public API:
     Account          -- one bank account a profile holds
     StatementRow     -- one transaction exactly as a statement reported it
     ParsedStatement  -- what a parser hands to the import pipeline
+    Document         -- a contract, letter or agreement kept in the archive
     ACCOUNT_KINDS    -- account kinds the schema accepts
 
 Example:
@@ -74,6 +75,31 @@ class Account:
                 "The identifier hint is the last four digits of the account "
                 "number and nothing more."
             )
+
+
+@dataclass(frozen=True)
+class Document:
+    """A file kept for reference that is not a statement.
+
+    Attributes:
+        sha256: Hash of the file's bytes; names its directory in the archive.
+        original_name: Filename it was added from, for recognition only.
+        title: What a person would call it, e.g. "Car finance agreement".
+        dated_on: The date the document carries, if known.
+        note: Anything worth remembering about it.
+        id: Database id; None until stored.
+    """
+
+    sha256: str
+    original_name: str
+    title: str
+    dated_on: date | None = None
+    note: str | None = None
+    id: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.title.strip():
+            raise ValueError("A document needs a title; pass --title.")
 
 
 @dataclass(frozen=True)

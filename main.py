@@ -3,10 +3,11 @@
 Subcommands:
     profile   Create and list profiles, one per person.
     init      Create a profile's ledger database.
-    account   Add and list bank accounts.
+    account   Add and list bank accounts, and keep their IBAN and BIC.
     import    Import a bank export into an account.
     recurring Recurring payments, and what changed about them.
     status    Coverage, balance, imports and balance breaks per account.
+    doc       Keep contracts, letters and agreements beside the statements.
     db        Migration state, row counts and the live schema.
 
 Every ledger command is profile-scoped. --profile NAME selects one; omitting it
@@ -22,6 +23,9 @@ Examples:
     uv run python main.py account add aib-current --institution AIB --kind current --last4 1234
         Register an account exports will be imported into.
 
+    uv run python main.py account details aib-current --iban "IE29 AIBK ..." --bic AIBKIE2D
+        Keep the account's IBAN and BIC; without --iban, print them.
+
     uv run python main.py import ~/Downloads/Transaction_Export.csv --dry-run
         Check an export and report what importing it would change.
 
@@ -33,6 +37,12 @@ Examples:
 
     uv run python main.py status
         What the ledger covers, and where its running balance does not add up.
+
+    uv run python main.py doc add ~/Downloads/agreement.pdf --title "Car finance agreement" --date 2025-04-01
+        Keep a document in the private archive, with a title to find it by.
+
+    uv run python main.py doc list
+        Every kept document and statement, and where its file is.
 
     uv run python main.py db schema
         The live schema as SQL.
@@ -47,6 +57,7 @@ from pathlib import Path
 # Ensure src/ is importable when running from the project root.
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from cmd_documents import cmd_doc  # noqa: E402
 from cmd_import import cmd_import  # noqa: E402
 from cmd_recurring import cmd_recurring  # noqa: E402
 from commands import cmd_account, cmd_db, cmd_init, cmd_profile, cmd_status  # noqa: E402
@@ -115,6 +126,15 @@ def build_parser() -> argparse.ArgumentParser:
     _add_profile_flag(p_account_add)
     p_account_list = account_sub.add_parser("list", help="List accounts")
     _add_profile_flag(p_account_list)
+    p_account_details = account_sub.add_parser(
+        "details", help="Show an account's IBAN, BIC and sort code, or enter them"
+    )
+    p_account_details.add_argument("name", help="Account name, e.g. aib-current")
+    p_account_details.add_argument(
+        "--iban", default=None, help="Store this IBAN (checked by its check digits)"
+    )
+    p_account_details.add_argument("--bic", default=None, help="Store this BIC")
+    _add_profile_flag(p_account_details)
     p_account.set_defaults(func=cmd_account)
 
     p_import = sub.add_parser("import", help="Import a bank export into an account")
@@ -158,6 +178,25 @@ def build_parser() -> argparse.ArgumentParser:
     p_status = sub.add_parser("status", help="Ledger coverage and balance breaks")
     _add_profile_flag(p_status)
     p_status.set_defaults(func=cmd_status)
+
+    p_doc = sub.add_parser(
+        "doc", help="Keep and find contracts, letters and agreements"
+    )
+    doc_sub = p_doc.add_subparsers(dest="doc_cmd", required=True)
+    p_doc_add = doc_sub.add_parser("add", help="Keep a document in the archive")
+    p_doc_add.add_argument("file", help="The document, e.g. a PDF")
+    p_doc_add.add_argument("--title", required=True, help="What to call it")
+    p_doc_add.add_argument(
+        "--date", default=None, metavar="YYYY-MM-DD", help="The date it carries"
+    )
+    p_doc_add.add_argument("--note", default=None, help="Anything worth remembering")
+    _add_profile_flag(p_doc_add)
+    p_doc_list = doc_sub.add_parser("list", help="Kept documents and statements")
+    _add_profile_flag(p_doc_list)
+    p_doc_open = doc_sub.add_parser("open", help="Open a kept document")
+    p_doc_open.add_argument("id", type=int, help="Document number from 'doc list'")
+    _add_profile_flag(p_doc_open)
+    p_doc.set_defaults(func=cmd_doc)
 
     p_db = sub.add_parser("db", help="Migration state and schema")
     db_sub = p_db.add_subparsers(dest="db_cmd", required=True)
