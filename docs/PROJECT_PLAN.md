@@ -12,13 +12,11 @@ months of real use, the plan is wrong, however good the code.
 
 ## Now
 
-1. **AIB backfill.** Import the 24 months AIB's Historical Transactions export
-   allows into Adam's profile. Done when every file imports without a
-   reconciliation problem, `status` shows no balance breaks, and Adam has read
-   `recurring` through and noted what surprised him and what he acted on.
-   Most of Adam's own spending goes through AIB.
+Until the commitments register exists, facts the ledger cannot hold (rates,
+term ends, assets, things to check) live in a private `notes.md` in the
+profile's directory, beside the savings log.
 
-2. **The household ledger** (`docs/DECISIONS.md`: household from day one).
+1. **The household ledger** (`docs/DECISIONS.md`: household from day one).
    - A profile becomes a household: a `people` table, and every account owned
      by one person or held jointly (`account add --owner`). `main.py`, README
      and `docs/data-model.md` stop saying "one profile per person".
@@ -31,27 +29,29 @@ months of real use, the plan is wrong, however good the code.
      Derived on every read like `recurring`; only the owner's corrections are
      stored.
 
-3. **The commitments register.** Every recurring outflow with its provider,
+2. **The commitments register.** Every recurring outflow with its provider,
    price history and renewal date, from `recurring` plus the owner's
    confirmations: rename, not recurring, cancelled, renewal date. The first
-   derived facts worth storing, as corrections. Adam and his wife fill in the
-   contracts that renew in the next six months. The first renewal is reviewed
-   by hand in a Claude Code session (`docs/DECISIONS.md`: research by hand
-   first), and its evidence kept.
+   derived facts worth storing, as corrections. It also holds the dated events
+   no statement shows in advance: a fixed mortgage rate ending, a car finance
+   agreement's final payment. Adam and his wife fill in the contracts that
+   renew in the next six months, starting from `notes.md`. The first renewal
+   is reviewed by hand in a Claude Code session (`docs/DECISIONS.md`: research
+   by hand first), and its evidence kept.
 
-4. **Chat.** Telegram chat over the ledger, starting from zdrowskit's `llm.py`,
+3. **Chat.** Telegram chat over the ledger, starting from zdrowskit's `llm.py`,
    tables, eval framework and SQL tool, with the safeguards in
    `docs/DECISIONS.md` (read-only SQL). Questions are logged: the ones asked
    twice become the weekly check. Needs the decision on what leaves the
    machine first (open questions below).
 
-5. **Statement access.** An hour's spike: link AIB to Enable Banking in
+4. **Statement access.** An hour's spike: link AIB to Enable Banking in
    restricted mode, pull 90 days, and compare with the CSV for price, history
    depth, description length and balances. Then decide between the API and a
    scheduled browser download (`docs/DECISIONS.md`: CSV first). Until then,
    import from a watched drop folder, and say when the ledger is stale.
 
-6. **The weekly check.** Silent unless something material changed: salary
+5. **The weekly check.** Silent unless something material changed: salary
    missing, late or changed; a new recurring payment or a confirmed price
    rise; a duplicate charge; a renewal coming up; the balance projected below a
    floor before payday; a stale ledger or a balance break.
@@ -65,6 +65,8 @@ Not ordered. Each waits until real use shows it is needed.
 - Categories, only as far as decisions need: fixed or discretionary, and a few
   buckets. Unclassified stays visible.
 - Merchants and the aliases banks print for them, with a confirmed-alias table.
+  Claude Haiku 5.5 is the candidate model for rows rules cannot identify:
+  fast and cheap enough to run over the whole ledger.
 - Refunds and reimbursements linked to what they reverse.
 - Tax reliefs claimable from evidence already in the statements.
 - Savings, pension, mortgage and investment balances as dated snapshots, and
@@ -82,8 +84,6 @@ Not ordered. Each waits until real use shows it is needed.
 - What counts as material, in euros a year.
 - Enable Banking's price for restricted mode: its FAQ describes volume pricing,
   while third parties report personal use as free.
-- Whether one AIB export can span 24 months, or the site limits the range per
-  file.
 - Whether a card refund carries the same description as the purchase it
   reverses.
 - Whether AIB's 18-character descriptions identify merchants well enough, or
