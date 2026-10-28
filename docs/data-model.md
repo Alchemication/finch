@@ -14,9 +14,13 @@ Each profile's ledger lives at `$FINCH_HOME/profiles/<name>/ledger.db`.
 | `transaction_sightings` | Every import that reported each transaction, with its row number in that file. |
 | `documents` | One row per kept document (`doc add`): content hash, original filename, title, the date it carries and a note. The file itself is in the source archive. |
 | `account_identifiers` | The owner's own IBAN and BIC for an account, typed in with `account details`. The only place a full account identifier is stored; no model reads it. |
+| `category_rules` | One row per decision about a payee's category: proposed by a model with a confidence, or confirmed or rejected by the owner. A decision supersedes the one before; only the latest applies, and only once confirmed. |
+| `transaction_labels` | The owner's category for one transaction, with a note; wins over the payee's rule. Superseded the same way. |
 
-There are no tables for merchants, categories, transfers or recurring payments
-yet. Each arrives with the code that fills it.
+There are no tables for merchants, transfers or recurring payments yet. Each
+arrives with the code that fills it. A transaction's category is worked out on
+every read from `category_rules` and `transaction_labels`; see
+[categories](categories.md).
 
 ## Conventions
 

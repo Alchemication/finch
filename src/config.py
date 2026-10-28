@@ -72,6 +72,15 @@ BALANCE_BREAKS_SHOWN: int = int(os.environ.get("FINCH_BALANCE_BREAKS_SHOWN", "5"
 marks one missing statement, so a handful locates the gaps; the count is always
 shown in full."""
 
+UNCLASSIFIED_SHOWN: int = int(os.environ.get("FINCH_UNCLASSIFIED_SHOWN", "25"))
+"""Payees and payments listed by ``category unclassified``. Twenty-five payees
+by money moved covered most of a 24-month ledger's unclassified spending, and
+a list longer than a screen stops being read."""
+
+SPEND_MONTHS_SHOWN: int = int(os.environ.get("FINCH_SPEND_MONTHS", "12"))
+"""Months shown by ``spend --monthly``: a year, so each month sits beside the
+same month's neighbours and seasonal costs show up."""
+
 
 # ---------------------------------------------------------------------------
 # Recurring payments
@@ -158,3 +167,18 @@ RECURRING_REPORT_WINDOW_DAYS: int = int(
 )
 """How far back ``recurring`` looks for changes, starts and stops. A quarter, so
 a monthly look does not miss the month before, and short enough to stay news."""
+
+
+# ---------------------------------------------------------------------------
+# Annotation page
+# ---------------------------------------------------------------------------
+
+UI_HOST: str = "127.0.0.1"
+"""The annotation page listens on loopback only. It serves bank data and
+accepts writes, so it must never be reachable from another machine; there is
+deliberately no override."""
+
+UI_PORT: int = int(os.environ.get("FINCH_UI_PORT", "0"))
+"""Port for ``main.py ui``. 0 lets the system pick a free one each run: the
+page's address carries a fresh token every start anyway, so a fixed port buys
+nothing and can collide with another local server."""

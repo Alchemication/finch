@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="finch-token" content="__FINCH_TOKEN__">
+  <title>finch · annotate</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <span class="name">finch</span>
+      <span class="range" id="range"></span>
+    </div>
+    <div class="coverage" id="coverage" aria-live="polite">
+      <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
+      <div class="coverage-text" id="coverage-text">Loading…</div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-view="review" class="tab">To review <span class="count" id="count-review"></span></button>
+    <button role="tab" data-view="unclassified" class="tab">Unclassified <span class="count" id="count-unclassified"></span></button>
+    <button role="tab" data-view="all" class="tab">All payees <span class="count" id="count-all"></span></button>
+    <button role="tab" data-view="insights" class="tab">Insights</button>
+    <button class="help-toggle" id="help-toggle" title="Keyboard shortcuts (?)">?</button>
+  </nav>
+
+  <main>
+    <section id="list-view">
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Search payees  /" autocomplete="off" spellcheck="false">
+        <select id="filter-category" aria-label="Filter by category">
+          <option value="">Any category</option>
+        </select>
+        <select id="sort" aria-label="Sort">
+          <option value="money">Biggest first</option>
+          <option value="recent">Most recent</option>
+          <option value="payments">Most payments</option>
+          <option value="name">A–Z</option>
+        </select>
+        <span class="spacer"></span>
+        <button class="btn" id="accept-high" hidden>Accept all high-confidence shown</button>
+        <button class="btn primary" id="accept-selected" hidden>Accept selected</button>
+      </div>
+      <div class="list-head">
+        <span class="c-check"><input type="checkbox" id="select-all" aria-label="Select all shown"></span>
+        <span class="c-payee">Payee</span>
+        <span class="c-num">Payments</span>
+        <span class="c-num">Out</span>
+        <span class="c-num">In</span>
+        <span class="c-date">Last</span>
+        <span class="c-cat">Category</span>
+      </div>
+      <ol class="rows" id="rows" tabindex="0" aria-label="Payees"></ol>
+      <p class="empty" id="empty" hidden></p>
+    </section>
+
+    <section id="insights-view" hidden>
+      <div class="toolbar">
+        <div class="seg" id="year-seg" role="group" aria-label="Year"></div>
+        <span class="spacer"></span>
+        <span class="hint" id="year-note"></span>
+      </div>
+      <div class="cards" id="cards"></div>
+      <h2 class="section-title">Spending by category</h2>
+      <ol class="bars" id="bars-spend"></ol>
+      <h2 class="section-title" id="other-title">Transfers and income</h2>
+      <ol class="bars" id="bars-other"></ol>
+      <p class="hint">Net of refunds. Each line on the right is that category month by month across the whole ledger. Click a category to see its payees.</p>
+    </section>
+  </main>
+
+  <aside class="drawer" id="drawer" hidden aria-label="Payee details">
+    <header class="drawer-head">
+      <div>
+        <h2 id="drawer-name"></h2>
+        <div class="drawer-sub" id="drawer-sub"></div>
+      </div>
+      <button class="icon-btn" id="drawer-close" aria-label="Close">✕</button>
+    </header>
+    <div class="drawer-actions">
+      <span>All payments from this payee:</span>
+      <span id="drawer-picker"></span>
+    </div>
+    <p class="hint">Label a single payment when it differs from the rest, e.g. one transfer that was a holiday repayment. A label always wins over the payee's category.</p>
+    <ol class="tx" id="drawer-tx"></ol>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <div class="picker" id="picker" hidden role="dialog" aria-label="Choose a category">
+    <input type="text" id="picker-input" placeholder="Type to filter…" autocomplete="off" spellcheck="false">
+    <ul id="picker-list" role="listbox"></ul>
+  </div>
+
+  <div class="help" id="help" hidden>
+    <h3>Keyboard</h3>
+    <dl>
+      <dt>j / k or ↓ / ↑</dt><dd>Move between payees</dd>
+      <dt>a</dt><dd>Accept the proposal</dd>
+      <dt>c</dt><dd>Choose a category</dd>
+      <dt>n</dt><dd>Mark as no category</dd>
+      <dt>o or Enter</dt><dd>Open payments</dd>
+      <dt>x</dt><dd>Select or unselect</dd>
+      <dt>/</dt><dd>Search</dd>
+      <dt>1 – 4</dt><dd>Switch tab</dd>
+      <dt>Esc</dt><dd>Close</dd>
+    </dl>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -22,9 +22,18 @@ change: say so, and update it here. The working rules that follow from them
   and price rises, then idle cash, then reliefs; discretionary spending
   patterns save the least and least reliably. So the commitments register
   comes before categories, and categories go only as far as decisions need.
-- **No budgets or dashboards.** The output is a short explanation of what
-  changed and what it costs a year. Category totals answer a question asked;
-  they are not pushed.
+- **Categories before the household ledger** (Adam, 2026-10-28). The first
+  real ledger showed money worth claiming that only categories find: medical
+  payments for relief, claimable four years back. Rules carry over to the
+  household's other accounts when they arrive, so the work is not lost. One
+  category per payment, a short list, and unclassified when unsure: the owner
+  labels what matters by hand.
+- **No budgets; charts only where you go to look** (2026-10-28, revised from
+  "no dashboards"). What finch sends is a short explanation of what changed
+  and what it costs a year. Category totals and charts live on the annotation
+  page and in `spend`, for when the owner asks (Adam wanted to see years of
+  spending at a glance); they are never pushed, and there are no budgets to
+  keep.
 
 ## Data in
 
@@ -41,6 +50,14 @@ change: say so, and update it here. The working rules that follow from them
   of printed per-row balances, and would cover only dates after the last CSV,
   since sources may not overlap. A scheduled browser download stays the
   fallback.
+
+## The annotation page
+
+- **Local, not hosted** (2026-10-28). The page shows every payee and payment
+  and accepts decisions. A hosted page would put the full spending history on
+  someone else's server for the sake of a link. It runs on loopback with a
+  per-start token instead, loads nothing from the internet, and draws its
+  charts itself.
 
 ## Models
 

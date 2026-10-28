@@ -8,6 +8,9 @@ Subcommands:
     recurring Recurring payments, and what changed about them.
     status    Coverage, balance, imports and balance breaks per account.
     doc       Keep contracts, letters and agreements beside the statements.
+    category  Name payees and payments with categories; review proposals.
+    spend     Money out and in by category, per year or month.
+    ui        A local page for naming payees and seeing where money went.
     db        Migration state, row counts and the live schema.
 
 Every ledger command is profile-scoped. --profile NAME selects one; omitting it
@@ -44,6 +47,15 @@ Examples:
     uv run python main.py doc list
         Every kept document and statement, and where its file is.
 
+    uv run python main.py category unclassified
+        The biggest payees and payments nothing has named yet.
+
+    uv run python main.py spend --monthly
+        Spending by category for the last twelve months.
+
+    uv run python main.py ui
+        Open the annotation page in the browser (local only).
+
     uv run python main.py db schema
         The live schema as SQL.
 """
@@ -57,11 +69,19 @@ from pathlib import Path
 # Ensure src/ is importable when running from the project root.
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from cmd_categories import cmd_category, cmd_spend  # noqa: E402
 from cmd_documents import cmd_doc  # noqa: E402
 from cmd_import import cmd_import  # noqa: E402
+from cmd_ui import cmd_ui  # noqa: E402
 from cmd_recurring import cmd_recurring  # noqa: E402
 from commands import cmd_account, cmd_db, cmd_init, cmd_profile, cmd_status  # noqa: E402
-from config import BASE_CURRENCY, RECURRING_REPORT_WINDOW_DAYS  # noqa: E402
+from config import (  # noqa: E402
+    BASE_CURRENCY,
+    RECURRING_REPORT_WINDOW_DAYS,
+    SPEND_MONTHS_SHOWN,
+    UI_PORT,
+    UNCLASSIFIED_SHOWN,
+)
 from log import setup_logging  # noqa: E402
 from models import ACCOUNT_KINDS  # noqa: E402
 
@@ -197,6 +217,77 @@ def build_parser() -> argparse.ArgumentParser:
     p_doc_open.add_argument("id", type=int, help="Document number from 'doc list'")
     _add_profile_flag(p_doc_open)
     p_doc.set_defaults(func=cmd_doc)
+
+    p_cat = sub.add_parser("category", help="Name payees and payments with categories")
+    cat_sub = p_cat.add_subparsers(dest="category_cmd", required=True)
+    cat_sub.add_parser("list", help="The categories and their slugs")
+    p_cat_propose = cat_sub.add_parser("propose", help="Load proposed rules from JSON")
+    p_cat_propose.add_argument(
+        "file", help="JSON list of {key, category, confidence, note}"
+    )
+    _add_profile_flag(p_cat_propose)
+    p_cat_review = cat_sub.add_parser("review", help="Proposals waiting for review")
+    p_cat_review.add_argument("--category", default=None, metavar="SLUG")
+    _add_profile_flag(p_cat_review)
+    p_cat_confirm = cat_sub.add_parser("confirm", help="Confirm proposals")
+    p_cat_confirm.add_argument(
+        "--category", action="append", metavar="SLUG", help="Every proposal in it"
+    )
+    p_cat_confirm.add_argument(
+        "--key", dest="keys", action="append", metavar="KEY", help="One payee"
+    )
+    p_cat_confirm.add_argument(
+        "--except", dest="exclude", action="append", metavar="KEY", help="Hold back"
+    )
+    p_cat_confirm.add_argument("--all", action="store_true", help="Every proposal")
+    _add_profile_flag(p_cat_confirm)
+    p_cat_set = cat_sub.add_parser("set", help="Name a payee yourself")
+    p_cat_set.add_argument("key", help="Counterparty key, as listed")
+    p_cat_set.add_argument("category", help="Category slug, or 'none'")
+    p_cat_set.add_argument("--note", default=None)
+    _add_profile_flag(p_cat_set)
+    p_cat_label = cat_sub.add_parser("label", help="Name one or more payments")
+    p_cat_label.add_argument("category", help="Category slug, or 'none'")
+    p_cat_label.add_argument(
+        "ids", type=int, nargs="+", metavar="ID", help="Transaction numbers, as listed"
+    )
+    p_cat_label.add_argument("--note", default=None, help="What it was")
+    _add_profile_flag(p_cat_label)
+    p_cat_loose = cat_sub.add_parser(
+        "unclassified", help="Biggest payees and payments with no category"
+    )
+    p_cat_loose.add_argument(
+        "--limit",
+        type=int,
+        default=UNCLASSIFIED_SHOWN,
+        metavar="N",
+        help=f"How many of each to list (default: {UNCLASSIFIED_SHOWN})",
+    )
+    _add_profile_flag(p_cat_loose)
+    p_cat.set_defaults(func=cmd_category)
+
+    p_spend = sub.add_parser("spend", help="Money out and in by category")
+    p_spend.add_argument("--monthly", action="store_true", help="Per month, not year")
+    p_spend.add_argument(
+        "--months",
+        type=int,
+        default=SPEND_MONTHS_SHOWN,
+        metavar="N",
+        help=f"Months shown with --monthly (default: {SPEND_MONTHS_SHOWN})",
+    )
+    _add_profile_flag(p_spend)
+    p_spend.set_defaults(func=cmd_spend)
+
+    p_ui = sub.add_parser("ui", help="Local page for naming payees and insights")
+    p_ui.add_argument(
+        "--port",
+        type=int,
+        default=UI_PORT,
+        help="Port on 127.0.0.1 (default: a free one)",
+    )
+    p_ui.add_argument("--no-open", action="store_true", help="Do not open the browser")
+    _add_profile_flag(p_ui)
+    p_ui.set_defaults(func=cmd_ui)
 
     p_db = sub.add_parser("db", help="Migration state and schema")
     db_sub = p_db.add_subparsers(dest="db_cmd", required=True)

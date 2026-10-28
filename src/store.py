@@ -28,6 +28,10 @@ Public API:
     load_imports       -- every statement import with its account
     set_account_identifiers -- store or replace an account's IBAN and BIC
     get_account_identifiers -- an account's IBAN and BIC, if entered
+    add_category_rule  -- record a decision about a counterparty, superseding the last
+    load_category_rules -- every active category rule
+    add_transaction_label -- the owner's category for one transaction
+    load_transaction_labels -- every active label, by transaction id
 
 Example:
     from store import open_existing_db, load_accounts
@@ -61,6 +65,8 @@ LEDGER_TABLES: tuple[str, ...] = (
     "transaction_sightings",
     "documents",
     "account_identifiers",
+    "category_rules",
+    "transaction_labels",
 )
 
 
@@ -522,3 +528,131 @@ def get_account_identifiers(
         (account_id,),
     ).fetchone()
     return AccountIdentifiers(iban=row["iban"], bic=row["bic"]) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Categories
+# ---------------------------------------------------------------------------
+
+
+def _supersede(
+    conn: sqlite3.Connection,
+    table: str,
+    column: str,
+    value: object,
+    insert: str,
+    params: tuple,
+) -> int:
+    """Insert a row and mark the active row for the same subject superseded by it.
+
+    The active-row unique index forbids two active rows even for a moment, so
+    the old row first points at itself, then at its successor.
+    """
+    old = conn.execute(
+        f"SELECT id FROM {table} WHERE {column} = ? AND superseded_by IS NULL",
+        (value,),
+    ).fetchone()
+    if old is not None:
+        conn.execute(
+            f"UPDATE {table} SET superseded_by = id WHERE id = ?", (old["id"],)
+        )
+    new_id = int(conn.execute(insert, params).lastrowid)
+    if old is not None:
+        conn.execute(
+            f"UPDATE {table} SET superseded_by = ? WHERE id = ?", (new_id, old["id"])
+        )
+    return new_id
+
+
+def add_category_rule(
+    conn: sqlite3.Connection,
+    *,
+    counterparty_key: str,
+    category: str | None,
+    source: str,
+    status: str,
+    confidence: str | None = None,
+    note: str | None = None,
+) -> int:
+    """Record a decision about a counterparty key, superseding the active one.
+
+    Args:
+        conn: Open ledger connection.
+        counterparty_key: The key the rule matches, see ``describe``.
+        category: A category slug, or None for a rejected rule.
+        source: ``owner`` or ``claude``.
+        status: ``proposed``, ``confirmed`` or ``rejected``.
+        confidence: ``high``, ``medium`` or ``low`` for a proposal.
+        note: Why, in the decider's words.
+
+    Returns:
+        The new rule's id.
+    """
+    return _supersede(
+        conn,
+        "category_rules",
+        "counterparty_key",
+        counterparty_key,
+        """
+        INSERT INTO category_rules (
+            counterparty_key, category, source, status, confidence, note, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (counterparty_key, category, source, status, confidence, note, _now()),
+    )
+
+
+def load_category_rules(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Return every active category rule, by counterparty key."""
+    return conn.execute(
+        """
+        SELECT id, counterparty_key, category, source, status, confidence, note
+        FROM category_rules WHERE superseded_by IS NULL
+        ORDER BY counterparty_key
+        """
+    ).fetchall()
+
+
+def add_transaction_label(
+    conn: sqlite3.Connection,
+    transaction_id: int,
+    category: str | None,
+    note: str | None = None,
+) -> int:
+    """Record the owner's category for one transaction, superseding any earlier.
+
+    Raises:
+        ValueError: If no transaction has that id.
+    """
+    if (
+        conn.execute(
+            "SELECT 1 FROM transactions WHERE id = ?", (transaction_id,)
+        ).fetchone()
+        is None
+    ):
+        raise ValueError(
+            f"No transaction #{transaction_id}. Find ids with "
+            f"'uv run python main.py category unclassified'."
+        )
+    return _supersede(
+        conn,
+        "transaction_labels",
+        "transaction_id",
+        transaction_id,
+        """
+        INSERT INTO transaction_labels (transaction_id, category, note, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (transaction_id, category, note, _now()),
+    )
+
+
+def load_transaction_labels(conn: sqlite3.Connection) -> dict[int, sqlite3.Row]:
+    """Return every active label, keyed by transaction id."""
+    rows = conn.execute(
+        """
+        SELECT transaction_id, category, note FROM transaction_labels
+        WHERE superseded_by IS NULL
+        """
+    ).fetchall()
+    return {row["transaction_id"]: row for row in rows}

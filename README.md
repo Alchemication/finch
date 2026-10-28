@@ -9,8 +9,8 @@ something matters, and treats privacy as a first principle.
 
 **Status: ledger, AIB import and recurring payments.** Profiles, the ledger
 database, a reconciling import of AIB current account exports, and detection of
-recurring payments with their price changes work. Categories, transfer matching
-and reports are not built yet. See the [project plan](docs/PROJECT_PLAN.md).
+recurring payments with their price changes work, as do categories with a local
+annotation page and a spending report. Transfer matching is not built yet. See the [project plan](docs/PROJECT_PLAN.md).
 
 ## How it works
 
@@ -57,6 +57,7 @@ $FINCH_HOME/
   profiles/<name>/
     ledger.db
     sources/<sha256>/source.<ext>    statements and kept documents
+    proposals/                       category proposals, as JSON
 ```
 
 Directories are created `0700` and files `0600`. Nothing private may be written
@@ -78,6 +79,10 @@ inside the repository.
 | `doc add FILE --title TITLE [--date YYYY-MM-DD] [--note TEXT]` | Keep a contract, letter or agreement in the private archive. Adding the same file again changes nothing. |
 | `doc list` | Every kept document, and every imported statement with where its file is archived. |
 | `doc open N` | Open kept document N. |
+| `ui [--port N] [--no-open]` | Open the local annotation page: review proposed categories, name payees and payments, and see spending by category. |
+| `spend [--monthly] [--months N]` | Money out and in by category, per year or per month, net of refunds, with unclassified shown. |
+| `category unclassified [--limit N]` | The biggest payees and payments nothing has named yet. |
+| `category review` / `confirm` / `set` / `label` / `propose` / `list` | Review and confirm proposed categories, name a payee or a payment yourself. See [categories](docs/categories.md). |
 | `db status` / `db schema` | Migration state and row counts, or the live schema. |
 
 Every command except `profile` takes `--profile NAME`. Run any command with
@@ -87,6 +92,7 @@ Every command except `profile` takes `--profile NAME`. Run any command with
 
 - [AIB exports](docs/aib.md) — getting the file, and what the parser accepts
 - [Recurring payments](docs/recurring.md) — what counts, price changes, known limits
+- [Categories](docs/categories.md) — how a payment gets its category, review, the annotation page
 - [Data model](docs/data-model.md) — tables, conventions, row identity, reconciliation
 - [Project plan](docs/PROJECT_PLAN.md) — what comes next, and open questions
 - [Decisions](docs/DECISIONS.md) — what has been decided and why

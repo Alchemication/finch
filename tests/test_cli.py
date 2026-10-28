@@ -55,6 +55,9 @@ class TestCommandTree:
             "status",
             "db",
             "doc",
+            "category",
+            "spend",
+            "ui",
         }
 
 
@@ -240,3 +243,78 @@ class TestAccountDetails:
         assert result.returncode == 1
         assert "does not end in 1234" in result.stderr
         assert "5678" not in result.stderr
+
+
+class TestCategories:
+    def test_propose_review_confirm_and_spend(self, tmp_path: Path) -> None:
+        home = tmp_path / "home"
+        _ready(home)
+        assert _run(home, "import", str(FIXTURE)).returncode == 0
+
+        before = _run(home, "spend")
+        assert before.returncode == 0, before.stderr
+        assert "Unclassified" in before.stdout
+        assert "Cash" in before.stdout  # the withdrawal, by its channel
+
+        proposals = tmp_path / "proposals.json"
+        proposals.write_text(
+            '[{"key": "CORNERCAFE", "category": "eating-out", "confidence": "high"},'
+            ' {"key": "EXAMPLEMORTGA", "category": "housing", "confidence": "high"}]'
+        )
+        proposed = _run(home, "category", "propose", str(proposals))
+        assert proposed.returncode == 0, proposed.stderr
+        assert "Proposed 2 rules" in proposed.stdout
+
+        review = _run(home, "category", "review")
+        assert "CORNER CAFE" in review.stdout
+        assert "EXAMPLE MORTGA" in review.stdout
+
+        # Proposals do not apply until confirmed.
+        assert "Eating out" not in _run(home, "spend").stdout
+
+        confirmed = _run(
+            home, "category", "confirm", "--all", "--except", "EXAMPLEMORTGA"
+        )
+        assert "Confirmed 1 rules" in confirmed.stdout
+        spend = _run(home, "spend")
+        assert "Eating out and coffee" in spend.stdout
+        assert "€9.00" in spend.stdout
+        assert "Housing" not in spend.stdout
+
+        again = _run(home, "category", "propose", str(proposals))
+        assert "Proposed 0 rules; skipped 2" in again.stdout
+
+    def test_unknown_key_in_proposals_is_refused(self, tmp_path: Path) -> None:
+        home = tmp_path / "home"
+        _ready(home)
+        assert _run(home, "import", str(FIXTURE)).returncode == 0
+        proposals = tmp_path / "proposals.json"
+        proposals.write_text(
+            '[{"key": "NOSUCHPAYEE", "category": "groceries", "confidence": "high"}]'
+        )
+        result = _run(home, "category", "propose", str(proposals))
+        assert result.returncode == 1
+        assert "NOSUCHPAYEE" in result.stderr
+
+    def test_set_label_and_unclassified(self, tmp_path: Path) -> None:
+        home = tmp_path / "home"
+        _ready(home)
+        assert _run(home, "import", str(FIXTURE)).returncode == 0
+
+        listed = _run(home, "category", "unclassified")
+        assert listed.returncode == 0, listed.stderr
+        assert "EXAMPLEMORTGA" in listed.stdout
+
+        assert _run(home, "category", "set", "EXAMPLEMORTGA", "housing").returncode == 0
+        assert "EXAMPLEMORTGA" not in _run(home, "category", "unclassified").stdout
+
+        labelled = _run(
+            home, "category", "label", "income-salary", "9", "--note", "Pay"
+        )
+        assert labelled.returncode == 0, labelled.stderr
+        assert "Income: salary" in _run(home, "spend").stdout
+
+        assert "1 transactions" in labelled.stdout
+        bad = _run(home, "category", "set", "EXAMPLEMORTGA", "rent")
+        assert bad.returncode == 1
+        assert "Unknown category" in bad.stderr

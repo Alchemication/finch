@@ -119,7 +119,7 @@ before reopening anything settled.
 | `docs/PROJECT_PLAN.md` | The next steps, in the agreed order, and open questions. Take a step out when it is done. |
 | `docs/DECISIONS.md` | What has been decided and why. |
 | `docs/PRINCIPLES.md` | How finch should feel to the household and what it must never do. Check a new report, message or command against it. |
-| `docs/aib.md`, `docs/recurring.md`, `docs/data-model.md` | Current behavior: the AIB format, recurring payments, tables and reconciliation. |
+| `docs/aib.md`, `docs/recurring.md`, `docs/categories.md`, `docs/data-model.md` | Current behavior: the AIB format, recurring payments, categories and the annotation page, tables and reconciliation. |
 | `README.md` | Setup, commands, where data lives. |
 | `CLAUDE.md` / `AGENTS.md` | Working rules (this file). |
 
@@ -185,8 +185,12 @@ committing.
   and never touching the database; `parsers.detect` picks one by content
 - `src/describe.py` — channel, counterparty and grouping key for stored rows
 - `src/recurring.py` — recurring series, price changes, report window
+- `src/categories.py` — one category per transaction: labels, rules, channel defaults
+- `src/annotate.py` — the categorised ledger, payees and decisions, for the page and CLI
+- `src/ui_server.py`, `src/ui/` — the local annotation page: loopback server, static page
 - `src/commands.py`, `src/cmd_import.py`, `src/cmd_recurring.py`,
-  `src/cmd_documents.py` — CLI handlers and rendering
+  `src/cmd_documents.py`, `src/cmd_categories.py`, `src/cmd_ui.py` — CLI
+  handlers and rendering
 
 A parser records the layout it was written against in its module docstring and
 in `docs/<bank>.md`, and rejects anything affecting a figure outside it. When a

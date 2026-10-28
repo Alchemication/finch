@@ -16,20 +16,42 @@ Until the commitments register exists, facts the ledger cannot hold (rates,
 term ends, assets, things to check) live in a private `notes.md` in the
 profile's directory, beside the savings log.
 
-1. **The household ledger** (`docs/DECISIONS.md`: household from day one).
+1. **Categories, reviewed** (`docs/DECISIONS.md`: categories before the
+   household). Built: one category per payment from labels, payee rules and
+   payment type, proposals awaiting review, `spend`, and the local annotation
+   page (`main.py ui`, `docs/categories.md`). The first pass failed: every
+   payee waited on a click, and 608 is not a queue anyone works through.
+   Next:
+   - Keyword rules in code, with tests, for payees whose name says what they
+     are (supermarkets, fuel, pharmacies, the mortgage, the crèche). Like
+     channel defaults they apply without review; the owner corrects the odd
+     miss, and a correction beats the rule.
+   - Review only what is material: the payees and one-off payments making up
+     most of the money still unclassified, a few dozen at most. The long tail
+     stays unclassified, shown as a count.
+   - Adam labels the salary credits and the big one-off transfers.
+   - Then medical payments listed per tax year with what may qualify for
+     relief, and receipts kept with `doc add`.
+
+2. **The household ledger** (`docs/DECISIONS.md`: household from day one).
    - A profile becomes a household: a `people` table, and every account owned
      by one person or held jointly (`account add --owner`). `main.py`, README
      and `docs/data-model.md` stop saying "one profile per person".
-   - Before any of her data: agree with Adam's wife which of her accounts go
-     in (personal card spending, or joint only) and whether a model may read
-     them.
-   - Her bank's parser (Bank of Ireland, to confirm), and her backfill.
+   - Agreed with Adam's wife (2026-10-28): her whole Bank of Ireland current
+     account goes in, and Claude may read it.
+   - Her BOI parser and backfill. Waiting on a desktop export: the mobile app
+     exports three months at most. A first mobile export does not reconcile:
+     it prints a balance on each date's first row, but the same figure for
+     months on end, and end-of-day balances only for the last few dates. With
+     the desktop export, compare an overlapping range; if the balance column
+     still fails, take the PDF statements, which print opening and closing
+     balances, and decide between the two formats.
    - Transfers between household accounts paired and netted out, so moving
      money between partners or into the joint account is never spending.
      Derived on every read like `recurring`; only the owner's corrections are
      stored.
 
-2. **The commitments register.** Every recurring outflow with its provider,
+3. **The commitments register.** Every recurring outflow with its provider,
    price history and renewal date, from `recurring` plus the owner's
    confirmations: rename, not recurring, cancelled, renewal date. The first
    derived facts worth storing, as corrections. It also holds the dated events
@@ -39,19 +61,19 @@ profile's directory, beside the savings log.
    is reviewed by hand in a Claude Code session (`docs/DECISIONS.md`: research
    by hand first), and its evidence kept.
 
-3. **Chat.** Telegram chat over the ledger, starting from zdrowskit's `llm.py`,
+4. **Chat.** Telegram chat over the ledger, starting from zdrowskit's `llm.py`,
    tables, eval framework and SQL tool, with the safeguards in
    `docs/DECISIONS.md` (read-only SQL). Questions are logged: the ones asked
    twice become the weekly check. Needs the decision on what leaves the
    machine first (open questions below).
 
-4. **Statement access.** An hour's spike: link AIB to Enable Banking in
+5. **Statement access.** An hour's spike: link AIB to Enable Banking in
    restricted mode, pull 90 days, and compare with the CSV for price, history
    depth, description length and balances. Then decide between the API and a
    scheduled browser download (`docs/DECISIONS.md`: CSV first). Until then,
    import from a watched drop folder, and say when the ledger is stale.
 
-5. **The weekly check.** Silent unless something material changed: salary
+6. **The weekly check.** Silent unless something material changed: salary
    missing, late or changed; a new recurring payment or a confirmed price
    rise; a duplicate charge; a renewal coming up; the balance projected below a
    floor before payday; a stale ledger or a balance break.
@@ -62,8 +84,7 @@ Not ordered. Each waits until real use shows it is needed.
 
 - Renewal research automated, once the hand-run procedure has settled into a
   skill.
-- Categories, only as far as decisions need: fixed or discretionary, and a few
-  buckets. Unclassified stays visible.
+- A fixed or discretionary flag per category, if reports need it.
 - Merchants and the aliases banks print for them, with a confirmed-alias table.
   Claude Haiku 5.5 is the candidate model for rows rules cannot identify:
   fast and cheap enough to run over the whole ledger.
@@ -83,9 +104,8 @@ Not ordered. Each waits until real use shows it is needed.
 - What leaves the machine once models are involved: whether merchant names and
   amounts are sent verbatim, which providers' retention terms are acceptable,
   and whether a local model is good enough to pick tools.
-- Which of Adam's wife's accounts the household covers, at which banks, and
-  whether a Revolut or credit card carries spending the current accounts never
-  see.
+- Whether a Revolut or credit card on either side carries spending the
+  current accounts never see.
 - What counts as material, in euros a year.
 - Enable Banking's price for restricted mode: its FAQ describes volume pricing,
   while third parties report personal use as free.
