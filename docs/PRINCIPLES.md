@@ -20,5 +20,7 @@ report, message or command against these. Working rules for code are in
   compared, so a suggestion can be checked and redone.
 - **Short explanations, not dashboards to watch.** What finch says is what
   changed and what to do about it. Charts wait on the page until asked for.
+- **Who said so is kept.** Every document, fact and decision shows who
+  added it, and every thing who owns it.
 - **Both partners' privacy is theirs.** Each person decides what of theirs is
   in the household ledger and what a model may read.

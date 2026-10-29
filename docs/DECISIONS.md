@@ -21,19 +21,36 @@ change: say so, and update it here. The working rules that follow from them
   energy, insurance, broadband, mobile) save the most, then subscription creep
   and price rises, then idle cash, then reliefs; discretionary spending
   patterns save the least and least reliably. So the commitments register
-  comes before categories, and categories go only as far as decisions need.
+  (now part of the register of things owned) comes before categories, and
+  categories go only as far as decisions need.
 - **Categories before the household ledger** (Adam, 2026-10-28). The first
   real ledger showed money worth claiming that only categories find: medical
   payments for relief, claimable four years back. Rules carry over to the
   household's other accounts when they arrive, so the work is not lost. One
   category per payment, a short list, and unclassified when unsure: the owner
   labels what matters by hand.
+- **A register of things owned, not only a ledger** (Adam, 2026-10-29). Two
+  weeks of real use went mostly to things a bank statement never shows: a
+  pension top-up, a land plot's zoning and a letter about it, car finance,
+  the house's value, where each document is. The household wants one place
+  for all of it, findable later by both partners. So finch keeps a register
+  of what is owned and owed, each thing with owners, dated facts and
+  valuations with sources, documents, letters and deadlines, and net worth
+  computed from it. It widens the commitments register planned first; the
+  ledger stays the evidence for accounts.
 - **No budgets; charts only where you go to look** (2026-10-28, revised from
   "no dashboards"). What finch sends is a short explanation of what changed
   and what it costs a year. Category totals and charts live on the annotation
   page and in `spend`, for when the owner asks (Adam wanted to see years of
   spending at a glance); they are never pushed, and there are no budgets to
   keep.
+
+- **The whole household is visible to both partners** (Adam, 2026-10-29).
+  Transparency matters to this household, so both see everything, in chat
+  and on the page. Every account, thing, document and fact records who owns
+  it and who added or shared it, so a narrower view (only what is mine or
+  shared) can be added later for households that want it, without
+  re-entering anything.
 
 ## Data in
 
@@ -84,3 +101,19 @@ change: say so, and update it here. The working rules that follow from them
   researched in Claude Code sessions, as re-kid researches its worlds, and
   written down with source, retrieval date and what was compared. A research
   agent in the daemon waits until the procedure has settled into a skill.
+
+## Chat
+
+- **Telegram for words, one-time pages for files** (Adam, 2026-10-29). Both
+  partners already use Telegram, and zdrowskit's bot is the tested starting
+  point. Bot chats are not end-to-end encrypted and Telegram keeps them, so
+  the bot sends answers, figures and reminders, never documents or account
+  details. Those open from a one-time link to a finch page on the Mac mini.
+- **Tailscale first, Cloudflare if it is flaky** (Adam, 2026-10-29). The
+  pages are reached over the household's Tailscale network: free, no domain,
+  encrypted between their own devices, at the cost of the app on both phones.
+  Tailscale Funnel, which publishes to the internet, proved unreliable and is
+  not used. finch listens on the Mac mini only and the route in is
+  configuration, so a Cloudflare Tunnel behind Cloudflare Access (about €10 a
+  year for a domain; Cloudflare sees traffic in transit) can replace it
+  without code changes.
